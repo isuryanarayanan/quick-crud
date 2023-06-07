@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_container
+    ports:
+      - 27017:27017
+    environment:
+      MONGODB_INITDB_DATABASE: fastapi
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=$UID
+        - GROUP_ID=$GID
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app
+
+volumes:
+  mongo:
