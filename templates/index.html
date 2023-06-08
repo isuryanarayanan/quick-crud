@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Catalog</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <style>
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+      }
+
+      .search-box {
+        width: 300px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Course Catalog</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <div class="navbar-nav">
+            <div class="search-box">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Search for courses"
+              />
+            </div>
+            <div class="btn-group me-2">
+              <button
+                type="button"
+                class="btn btn-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Sort By
+              </button>
+              <ul class="dropdown-menu" id="sort-options">
+                <li>
+                  <a class="dropdown-item" href="#" data-sort="date">Date</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="#" data-sort="alphabetical"
+                    >Alphabetical</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" href="#" data-sort="rating"
+                    >Rating</a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="btn-group">
+              <button
+                type="button"
+                class="btn btn-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Filter By Domain
+              </button>
+              <ul class="dropdown-menu" id="domain-filter">
+                <!-- Domain options will be dynamically added here -->
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="row" id="course-list">
+        <!-- Course cards will be dynamically added here -->
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="courseModal"
+      tabindex="-1"
+      aria-labelledby="courseModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="courseModalLabel">Course Details</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <h5 id="courseName"></h5>
+            <p id="courseDescription"></p>
+            <p><strong>Domain:</strong> <span id="courseDomain"></span></p>
+            <p><strong>Rating:</strong> <span id="courseRating"></span></p>
+            <hr />
+            <h6>Course Chapters</h6>
+            <div id="chapterList"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let domains = []; // Array to store the unique domains
+
+      function generateCourseCards(courses) {
+        const courseList = document.getElementById("course-list");
+
+        courseList.innerHTML = "";
+
+        courses.forEach((course) => {
+          const card = document.createElement("div");
+          card.classList.add("col-md-4");
+
+          const maxLength = 100;
+          const truncatedDescription =
+            course.description.length > maxLength
+              ? course.description.substring(0, maxLength) + "..."
+              : course.description;
+
+          const cardContent = `
+          <div class="card m-1">
+              <div class="card-body">
+                  <h5 class="card-title">${course.name}</h5>
+                  <p class="card-text">${truncatedDescription}</p>
+                  <p class="card-domain"><strong>Domain:</strong> ${course.domain.join(
+                    ", "
+                  )}</p>
+                  <p class="card-rating"><strong>Rating:</strong> ${
+                    course.rating
+                  }</p>
+                  <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal" data-course="${
+                    course.course_url
+                  }">Learn More</a>
+              </div>
+          </div>
+        `;
+
+          card.innerHTML = cardContent;
+          courseList.appendChild(card);
+        });
+      }
+
+      function fetchCourses(filter = "", sort = "") {
+        let url = "http://localhost:8000/courses";
+
+        if (filter && filter !== "All") {
+          url += `?domain=${filter}`;
+        }
+
+        if (sort) {
+          url += url.includes("?") ? `&sort_by=${sort}` : `?sort_by=${sort}`;
+        }
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((courses) => {
+            const domainFilter = document.getElementById("domain-filter");
+            const sortOptions = document.getElementById("sort-options");
+
+            generateCourseCards(courses);
+
+            domainFilter.innerHTML = "";
+
+            const allOption = document.createElement("li");
+            allOption.innerHTML = `<a class="dropdown-item" href="#">All</a>`;
+            domainFilter.appendChild(allOption);
+
+            domains = [...new Set(courses.flatMap((course) => course.domain))];
+            domains.forEach((domain) => {
+              const option = document.createElement("li");
+              option.innerHTML = `<a class="dropdown-item" href="#">${domain}</a>`;
+              domainFilter.appendChild(option);
+            });
+
+            domainFilter.addEventListener("click", function (event) {
+              const selectedDomain = event.target.textContent;
+              document.getElementById(
+                "domain-filter"
+              ).previousElementSibling.textContent = "Filter By Domain";
+              fetchCourses(selectedDomain, sort);
+            });
+
+            sortOptions.addEventListener("click", function (event) {
+              const selectedSort = event.target.dataset.sort;
+              document.getElementById(
+                "sort-options"
+              ).previousElementSibling.textContent = "Sort By";
+              fetchCourses(filter, selectedSort);
+            });
+          })
+          .catch((error) => console.log(error));
+      }
+
+      function fetchCourseDetails(courseUrl) {
+        fetch(courseUrl)
+          .then((response) => response.json())
+          .then((course) => {
+            const courseName = document.getElementById("courseName");
+            const courseDescription =
+              document.getElementById("courseDescription");
+            const courseDomain = document.getElementById("courseDomain");
+            const courseRating = document.getElementById("courseRating");
+            const chapterList = document.getElementById("chapterList");
+
+            courseName.textContent = course.name;
+            courseDescription.textContent = course.description;
+            courseDomain.textContent = course.domain.join(", ");
+            courseRating.textContent = course.rating;
+
+            chapterList.innerHTML = "";
+
+            course.chapters.forEach((chapter) => {
+              const chapterItem = document.createElement("div");
+              chapterItem.classList.add("mb-3");
+
+              const chapterContent = `
+          <h6>${chapter.name}</h6>
+          <p>${chapter.description}</p>
+          <div class="d-flex">
+            <button type="button" class="btn btn-success me-2" onclick="rateChapter('${chapter.rate_positive_url}')">${chapter.ratings.positive} positive rating</button>
+            <button type="button" class="btn btn-danger" onclick="rateChapter('${chapter.rate_negative_url}')">${chapter.ratings.negative} negative rating</button>
+          </div>
+          <hr>
+        `;
+
+              chapterItem.innerHTML = chapterContent;
+              chapterList.appendChild(chapterItem);
+            });
+          })
+          .catch((error) => console.log(error));
+      }
+
+      function rateChapter(url) {
+        fetch(url, { method: "GET" })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Chapter rated successfully.");
+            } else {
+              console.log("Failed to rate chapter.");
+            }
+          })
+          .catch((error) => console.log(error));
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        fetchCourses();
+
+        document
+          .getElementById("courseModal")
+          .addEventListener("show.bs.modal", function (event) {
+            const courseUrl = event.relatedTarget.dataset.course;
+            fetchCourseDetails(courseUrl);
+          });
+      });
+    </script>
+  </body>
+</html>

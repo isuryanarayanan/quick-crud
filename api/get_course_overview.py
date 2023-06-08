@@ -30,6 +30,14 @@ async def get_course_overview(course_name: str):
                         '$concat': ['http://localhost:8000/courses/', '$name', '/chapter/', '$$chapter.name']
                     },
                     'text': '$$chapter.text',
+                    'ratings': '$$chapter.ratings',
+                    'rate_positive_url': {
+                        '$concat': ['http://localhost:8000/courses/', '$name', '/chapter/', '$$chapter.name', '/rate?rate=positive']
+                    },
+                    'rate_negative_url': {
+                        '$concat': ['http://localhost:8000/courses/', '$name', '/chapter/', '$$chapter.name', '/rate?rate=negative']
+                    },
+
                 }
             }
         },
