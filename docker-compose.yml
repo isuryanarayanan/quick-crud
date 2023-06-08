@@ -9,6 +9,21 @@ services:
     environment:
       MONGODB_INITDB_DATABASE: fastapi
 
+  loader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=$UID
+        - GROUP_ID=$GID
+    command: python3 load.py
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app
+
   fastapi:
     build:
       context: .
@@ -16,12 +31,15 @@ services:
       args:
         - USER_ID=$UID
         - GROUP_ID=$GID
-    restart: always
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # command: pytest
+    command: sh -c "pytest && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     env_file:
       - .env
     ports:
       - "8000:8000"
     depends_on:
+      - loader
       - mongodb
     volumes:
       - .:/app

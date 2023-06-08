@@ -1,2 +1,3 @@
 # quick-crud
-A quick crud applications for my fellow demons :kiss:
+
+A quick crud application using MongoDB and FastAPI.
